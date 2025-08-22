@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Itodo ImgOpt</title>
+<!-- Minimal, clean “Apple-like” look with Airtel accent -->
+<style>
+  :root{
+    --airtel:#e40000;
+    --ink:#1d1d1f;
+    --muted:#6e6e73;
+    --panel:#ffffff;
+    --bg:#f5f5f7;
+    --ring: rgba(228,0,0,.18);
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,system-ui,sans-serif;
+    color:var(--ink);
+    background:var(--bg);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+  header{
+    position:sticky;top:0;z-index:20;
+    background:var(--airtel);color:#fff;
+    padding:14px 18px;text-align:center;
+    font-weight:700;font-size:20px;letter-spacing:.2px;
+    box-shadow:0 6px 20px rgba(0,0,0,.12);
+  }
+  .container{max-width:1100px;margin:24px auto;padding:0 16px 40px}
+  .cards{
+    display:grid;gap:18px;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  }
+  .card{
+    background:var(--panel);border-radius:22px;padding:26px;
+    box-shadow:0 10px 28px rgba(0,0,0,.08);
+    display:flex;flex-direction:column;align-items:center;gap:10px;
+    text-align:center;cursor:pointer;transition:.2s transform,.2s box-shadow;
+  }
+  .card:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(0,0,0,.12)}
+  .card .emoji{font-size:28px}
+  .card h3{margin:6px 0 4px 0;font-size:18px}
+  .card p{margin:0;color:var(--muted);font-size:14px}
+
+  .section{
+    display:none;animation:fade .35s ease;
+    background:var(--panel);border-radius:22px;padding:20px;
+    box-shadow:0 12px 32px rgba(0,0,0,.08);margin-top:18px;
+  }
+  .section.active{display:block}
+  @keyframes fade{from{opacity:.0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+  .toolbar{
+    display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 14px;
+  }
+  .toolbar .field{
+    display:flex;flex-direction:column;gap:6px;min-width:160px;flex:1;
+  }
+  label{font-size:13px;color:var(--muted)}
+  input[type="number"],input[type="text"],select,.button.secondary{
+    padding:10px 12px;border-radius:12px;border:1px solid #e5e5ea;background:#fff;outline:none;
+  }
+  input[type="file"]{display:block}
+  input:focus,select:focus{border-color:var(--airtel);box-shadow:0 0 0 4px var(--ring)}
+  .button{
+    border:none;border-radius:14px;padding:12px 16px;font-weight:600;cursor:pointer;
+    background:var(--airtel);color:#fff;transition:.2s background,.2s transform;
+  }
+  .button:hover{background:#c90000}
+  .button:active{transform:translateY(1px)}
+  .button.secondary{
+    background:#fff;color:var(--airtel);border:1px solid var(--airtel);font-weight:600;
+  }
+  .hr{height:1px;background:#e9e9ee;margin:12px 0}
+
+  /* Gallery / preview grid */
+  .gallery{display:grid;gap:14px;margin:10px 0 6px;
+    grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  .thumb{
+    background:#fafafa;border:1px solid #eee;border-radius:16px;padding:8px;
+    box-shadow:0 4px 12px rgba(0,0,0,.05);
+    display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:flex-start;
+  }
+  .thumb img{width:100%;height:110px;object-fit:cover;border-radius:10px}
+  .thumb small{color:var(--muted);font-size:12px}
+  .thumb .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+
+  /* Progress */
+  .progress{height:12px;background:#eee;border-radius:10px;overflow:hidden}
+  .bar{height:100%;width:0;background:var(--airtel);transition:width .25s}
+
+  details.api{
+    border:1px dashed #e3e3ea;border-radius:14px;padding:10px 12px;background:#fff;
+  }
+  details.api summary{cursor:pointer;font-weight:600;color:var(--airtel)}
+  .muted{color:var(--muted)}
+</style>
+</head>
+<body>
+<header>Itodo ImgOpt</header>
+
+<div class="container">
+  <!-- Dashboard -->
+  <div id="dashboard" class="cards">
+    <div class="card" onclick="openSection('compressor')">
+      <div class="emoji">📉</div>
+      <h3>Image Compressor</h3>
+      <p>Resize, set quality/KB, download single or ZIP.</p>
+    </div>
+    <div class="card" onclick="openSection('converter')">
+      <div class="emoji">🔄</div>
+      <h3>File Converter</h3>
+      <p>Images ⇄ PNG/JPEG/WEBP, Image → PDF. PDF → image (1st page).</p>
+    </div>
+    <div class="card" onclick="openSection('bgremove')">
+      <div class="emoji">🎨</div>
+      <h3>Remove Background</h3>
+      <p>Auto or pick-a-color with tolerance. Export PNG.</p>
+    </div>
+  </div>
+
+  <!-- Compressor -->
+  <section id="compressor" class="section">
+    <div class="toolbar">
+      <button class="button secondary" onclick="backToHome()">← Back</button>
+      <div class="field"><label>Upload images</label><input id="cmp-input" type="file" accept="image/*" multiple></div>
+      <div class="field"><label>Target Width (px)</label><input id="cmp-w" type="number" placeholder="e.g., 1200"></div>
+      <div class="field"><label>Target Height (px)</label><input id="cmp-h" type="number" placeholder="e.g., 800"></div>
+      <div class="field"><label>Quality (%)</label><input id="cmp-q" type="number" min="1" max="100" value="80"></div>
+      <div class="field"><label>Target Size (KB, optional)</label><input id="cmp-kb" type="number" placeholder="e.g., 200"></div>
+      <div class="field"><label>Output Format</label>
+        <select id="cmp-format">
+          <option value="image/jpeg">JPEG</option>
+          <option value="image/png">PNG</option>
+          <option value="image/webp">WEBP</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="progress"><div id="cmp-bar" class="bar"></div></div>
+    <div id="cmp-status" class="muted" style="margin:6px 0 10px">0%</div>
+
+    <!-- Previews on top -->
+    <div id="cmp-gallery" class="gallery"></div>
+
+    <div class="toolbar" style="justify-content:flex-end">
+      <button class="button" onclick="compressImages()">Compress</button>
+      <button class="button secondary" onclick="downloadAllZip()">Download All as ZIP</button>
+    </div>
+  </section>
+
+  <!-- Converter -->
+  <section id="converter" class="section">
+    <div class="toolbar">
+      <button class="button secondary" onclick="backToHome()">← Back</button>
+      <div class="field"><label>Upload file</label><input id="cv-input" type="file" /></div>
+      <div class="field"><label>Convert to</label>
+        <select id="cv-target">
+          <optgroup label="Images">
+            <option value="image/png">PNG</option>
+            <option value="image/jpeg">JPEG</option>
+            <option value="image/webp">WEBP</option>
+          </optgroup>
+          <optgroup label="Documents">
+            <option value="application/pdf">PDF (from image)</option>
+            <option value="docx">DOCX (via API later)</option>
+          </optgroup>
+        </select>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+    <div id="cv-preview" class="gallery"></div>
+
+    <div class="toolbar" style="justify-content:flex-end">
+      <button class="button" onclick="convertClient()">Convert</button>
+    </div>
+
+    <details class="api" style="margin-top:10px">
+      <summary>🔌 Connect an API (for DOCX or advanced PDF workflows)</summary>
+      <div class="toolbar">
+        <div class="field"><label>API URL</label><input id="api-url" type="text" placeholder="https://api.example.com/convert"></div>
+        <div class="field"><label>API Key</label><input id="api-key" type="text" placeholder="sk-..."></div>
+        <button class="button secondary" onclick="convertViaAPI()">Test API call (stub)</button>
+      </div>
+      <p class="muted" style="margin-top:0">
+        Use this when you’re ready to hook providers like CloudConvert or similar services.  
+        The built-in converter handles image ⇄ image, image → PDF, and PDF → image (first page) on-device.
+      </p>
+    </details>
+  </section>
+
+  <!-- Background remover -->
+  <section id="bgremove" class="section">
+    <div class="toolbar">
+      <button class="button secondary" onclick="backToHome()">← Back</button>
+      <div class="field"><label>Upload image</label><input id="bg-input" type="file" accept="image/*"></div>
+      <div class="field"><label>Mode</label>
+        <select id="bg-mode">
+          <option value="auto">Auto (corner color)</option>
+          <option value="pick">Pick a color</option>
+        </select>
+      </div>
+      <div class="field"><label>Tolerance (0–255)</label><input id="bg-tol" type="number" min="0" max="255" value="32"></div>
+    </div>
+
+    <div class="hr"></div>
+    <div id="bg-gallery" class="gallery"></div>
+
+    <div class="toolbar" style="justify-content:flex-end">
+      <button class="button" onclick="processBackground()">Remove Background</button>
+    </div>
+  </section>
+</div>
+
+<!-- Minimal libs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- PDF.js for client-side PDF → image (first page) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.min.js"></script>
+
+<script>
+  /* ---------- Navigation ---------- */
+  function openSection(id){
+    document.getElementById('dashboard').style.display='none';
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+  function backToHome(){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.getElementById('dashboard').style.display='grid';
+  }
+
+  /* ---------- Utilities ---------- */
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  function blobToObjectURL(blob){ return URL.createObjectURL(blob); }
+  function dataURLtoBlob(dataURL){
+    const parts = dataURL.split(','), mime = parts[0].match(/:(.*?);/)[1];
+    const bstr = atob(parts[1]); let n = bstr.length; const u8 = new Uint8Array(n);
+    while(n--) u8[n] = bstr.charCodeAt(n);
+    return new Blob([u8], {type:mime});
+  }
+
+  /* =========================================================
+     1) IMAGE COMPRESSOR
+     ========================================================= */
+  const cmpInput = $('#cmp-input');
+  const cmpGallery = $('#cmp-gallery');
+  let cmpFiles = [];         // File[]
+  let cmpCompressed = [];    // {name, blob}[]
+
+  cmpInput.addEventListener('change', e=>{
+    cmpFiles = Array.from(e.target.files || []);
+    renderCmpPreviews(cmpFiles);
+    cmpCompressed = [];
+  });
+
+  function renderCmpPreviews(files){
+    cmpGallery.innerHTML = '';
+    files.forEach(file=>{
+      const url = URL.createObjectURL(file);
+      const card = document.createElement('div');
+      card.className = 'thumb';
+      card.innerHTML = `
+        <img src="${url}" alt="">
+        <small>${file.name}</small>
+        <div class="row" style="display:none"></div>
+      `;
+      cmpGallery.appendChild(card);
+    });
+  }
+
+  async function compressImages(){
+    if(!cmpFiles.length){ alert('Please upload images first.'); return; }
+    cmpCompressed = [];
+    const targetW = parseInt($('#cmp-w').value) || null;
+    const targetH = parseInt($('#cmp-h').value) || null;
+    const qualityPct = Math.min(100, Math.max(1, parseInt($('#cmp-q').value) || 80));
+    const targetKB = parseInt($('#cmp-kb').value) || null;
+    const mime = $('#cmp-format').value;
+    const q0 = Math.max(.05, Math.min(1, qualityPct/100));
+
+    const bar = $('#cmp-bar'); const status = $('#cmp-status');
+    bar.style.width = '0%'; status.textContent = '0%';
+
+    for(let i=0;i<cmpFiles.length;i++){
+      const f = cmpFiles[i];
+      const {blob} = await compressOne(f, {targetW, targetH, mime, q:q0, targetKB});
+      cmpCompressed.push({name:renameWithExt(f.name, mime), blob});
+
+      // add download button to the corresponding thumb
+      const card = cmpGallery.children[i];
+      const row = card.querySelector('.row');
+      row.style.display = 'flex';
+      const a = document.createElement('a');
+      a.textContent = 'Download';
+      a.className = 'button secondary';
+      a.style.padding='8px 10px'; a.style.fontSize='12px';
+      const url = blobToObjectURL(blob);
+      a.href = url; a.download = renameWithExt(f.name, mime);
+      row.innerHTML = ''; row.appendChild(a);
+
+      const pct = Math.round(((i+1)/cmpFiles.length)*100);
+      bar.style.width = pct+'%'; status.textContent = pct+'%';
+    }
+  }
+
+  function renameWithExt(filename, mime){
+    const base = filename.replace(/\.[^/.]+$/,'');
+    const ext = mime==='image/jpeg'?'jpg':mime==='image/png'?'png':mime==='image/webp'?'webp':'bin';
+    return `${base}.${ext}`;
+  }
+
+  function drawScaled(img, w, h){
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+    return c;
+  }
+
+  function computeNewSize(srcW, srcH, targetW, targetH){
+    if (targetW && targetH) return {w:targetW, h:targetH};
+    if (targetW && !targetH) return {w:targetW, h:Math.round((srcH/srcW)*targetW)};
+    if (!targetW && targetH) return {w:Math.round((srcW/srcH)*targetH), h:targetH};
+    return {w:srcW, h:srcH};
+  }
+
+  function imageFromFile(file){
+    return new Promise(res=>{
+      const img = new Image(); img.onload = ()=>res(img);
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  async function compressOne(file, {targetW, targetH, mime, q, targetKB}){
+    const img = await imageFromFile(file);
+    const {w,h} = computeNewSize(img.naturalWidth||img.width, img.naturalHeight||img.height, targetW, targetH);
+    const canvas = drawScaled(img, w, h);
+
+    // main encode
+    let blob = await new Promise(r=>canvas.toBlob(r, mime, q));
+    if (targetKB){
+      let qStep = 0.06; let qNow = q;
+      // iterative downscale quality until under targetKB (floor at 0.08)
+      while (blob.size/1024 > targetKB && qNow > 0.08){
+        qNow = Math.max(0.08, qNow - qStep);
+        blob = await new Promise(r=>canvas.toBlob(r, mime, qNow));
+      }
+    }
+    return {blob};
+  }
+
+  async function downloadAllZip(){
+    if (!cmpCompressed.length){ alert('No compressed images yet.'); return; }
+    const zip = new JSZip();
+    cmpCompressed.forEach(({name, blob})=> zip.file(name, blob));
+    const out = await zip.generateAsync({type:'blob'});
+    saveAs(out, 'itodo-imgopt-compressed.zip');
+  }
+
+  /* =========================================================
+     2) FILE CONVERTER (client-only features)
+     ========================================================= */
+  const cvInput = $('#cv-input');
+  const cvPreview = $('#cv-preview');
+
+  cvInput.addEventListener('change', ()=>{
+    cvPreview.innerHTML = '';
+    const f = cvInput.files && cvInput.files[0];
+    if (!f) return;
+    if (f.type.startsWith('image/')){
+      const url = URL.createObjectURL(f);
+      const card = document.createElement('div'); card.className='thumb';
+      card.innerHTML = `<img src="${url}"><small>${f.name}</small>`;
+      cvPreview.appendChild(card);
+    } else if (f.type==='application/pdf'){
+      const card = document.createElement('div'); card.className='thumb';
+      card.innerHTML = `<small>PDF selected: ${f.name}</small>`;
+      cvPreview.appendChild(card);
+    } else {
+      const card = document.createElement('div'); card.className='thumb';
+      card.innerHTML = `<small>Selected: ${f.name}</small>`;
+      cvPreview.appendChild(card);
+    }
+  });
+
+  async function convertClient(){
+    const f = cvInput.files && cvInput.files[0];
+    if (!f){ alert('Choose a file first.'); return; }
+    const target = $('#cv-target').value;
+
+    // 2a) Images -> other image formats (PNG/JPEG/WEBP)
+    if (f.type.startsWith('image/') && target.startsWith('image/')){
+      const img = await imageFromFile(f);
+      const canvas = drawScaled(img, img.naturalWidth||img.width, img.naturalHeight||img.height);
+      const blob = await new Promise(r=>canvas.toBlob(r, target, 0.92));
+      offerDownload(blob, swapExt(f.name, mimeToExt(target)));
+      return;
+    }
+
+    // 2b) Image -> PDF (using jsPDF)
+    if (f.type.startsWith('image/') && target==='application/pdf'){
+      const img = await imageFromFile(f);
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({orientation: img.width>=img.height?'l':'p', unit:'pt',
+        format:[img.width, img.height]});
+      const dataURL = canvasToDataURL(img);
+      pdf.addImage(dataURL, 'PNG', 0, 0, img.width, img.height);
+      const blob = pdf.output('blob');
+      offerDownload(blob, swapExt(f.name, 'pdf'));
+      return;
+    }
+
+    // 2c) PDF -> Image (first page) via PDF.js
+    if (f.type==='application/pdf' && target.startsWith('image/')){
+      const blob = await pdfFirstPageToImage(f, target);
+      offerDownload(blob, `${stripExt(f.name)}-page1.${mimeToExt(target)}`);
+      return;
+    }
+
+    // 2d) DOCX (placeholder) or unsupported combos -> ask API
+    if (target==='docx' || f.name.toLowerCase().endsWith('.docx')){
+      alert('DOCX conversion requires an external API. Use the "Connect an API" panel below.');
+      return;
+    }
+
+    alert('This conversion pair is not supported client-side.');
+  }
+
+  function canvasToDataURL(img){
+    const c = drawScaled(img, img.naturalWidth||img.width, img.naturalHeight||img.height);
+    return c.toDataURL('image/png', 0.95);
+  }
+
+  function swapExt(name, ext){ return `${stripExt(name)}.${ext}`; }
+  function stripExt(name){ return name.replace(/\.[^/.]+$/, ''); }
+  function mimeToExt(mime){
+    if (mime==='image/png') return 'png';
+    if (mime==='image/jpeg') return 'jpg';
+    if (mime==='image/webp') return 'webp';
+    return 'bin';
+    }
+
+  function offerDownload(blob, filename){
+    const url = blobToObjectURL(blob);
+    const card = document.createElement('div'); card.className='thumb';
+    card.innerHTML = `
+      <img src="${url}" onerror="this.style.display='none'">
+      <small>${filename}</small>
+      <div class="row"><a class="button secondary" style="font-size:12px;padding:8px 10px" href="${url}" download="${filename}">Download</a></div>
+    `;
+    cvPreview.appendChild(card);
+  }
+
+  // PDF.js first page render
+  async function pdfFirstPageToImage(file, targetMime){
+    const pdfjsLib = window['pdfjs-dist/build/pdf'];
+    // worker is bundled in the same CDN; pdf.js 4.x auto-loads worker in modern browsers,
+    // but we set it explicitly for safety if needed:
+    // pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.worker.min.js';
+    const array = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: array }).promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 1.5 });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width; canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    const blob = await new Promise(r=>canvas.toBlob(r, targetMime, 0.95));
+    return blob;
+  }
+
+  // Stub to show how to later call an API (e.g., CloudConvert)
+  async function convertViaAPI(){
+    const f = cvInput.files && cvInput.files[0];
+    const apiURL = $('#api-url').value.trim();
+    const apiKey = $('#api-key').value.trim();
+    const target = $('#cv-target').value;
+    if (!f || !apiURL || !apiKey){ alert('Pick a file and provide API URL + Key.'); return; }
+
+    // NOTE: This is a stub. CORS and provider-specific body shape will vary.
+    const form = new FormData();
+    form.append('file', f);
+    form.append('target_mime', target);
+
+    try{
+      const resp = await fetch(apiURL, { method:'POST', headers:{ 'Authorization':`Bearer ${apiKey}` }, body: form });
+      if (!resp.ok) throw new Error('API error');
+      const blob = await resp.blob();
+      offerDownload(blob, `${stripExt(f.name)}.converted`);
+    }catch(err){
+      alert('API call failed (this is a scaffold). Check your endpoint/CORS.');
+    }
+  }
+
+  /* =========================================================
+     3) BACKGROUND REMOVER (simple client-side)
+     ========================================================= */
+  const bgInput = $('#bg-input');
+  const bgGallery = $('#bg-gallery');
+  let bgImageFile = null;
+  let bgPickColor = null;
+
+  bgInput.addEventListener('change', e=>{
+    bgGallery.innerHTML = '';
+    bgImageFile = e.target.files && e.target.files[0];
+    if (!bgImageFile) return;
+    const url = URL.createObjectURL(bgImageFile);
+    const card = document.createElement('div'); card.className='thumb';
+    card.innerHTML = `<img id="bg-src" src="${url}"><small>Original</small>`;
+    bgGallery.appendChild(card);
+    // enable color picker on image if "pick" mode
+    setTimeout(()=>setupPicker(), 50);
+  });
+
+  function setupPicker(){
+    const mode = $('#bg-mode').value;
+    const img = $('#bg-src');
+    if (!img) return;
+    img.style.cursor = mode==='pick' ? 'crosshair' : 'default';
+    img.onclick = e=>{
+      if (mode!=='pick') return;
+      const rect = e.target.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+      // draw to temp canvas to read pixel
+      const c = document.createElement('canvas');
+      const scaleX = img.naturalWidth / img.clientWidth;
+      const scaleY = img.naturalHeight / img.clientHeight;
+      c.width = img.naturalWidth; c.height = img.naturalHeight;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      const data = ctx.getImageData(Math.round(cx*scaleX), Math.round(cy*scaleY), 1, 1).data;
+      bgPickColor = {r:data[0], g:data[1], b:data[2]};
+      alert(`Picked color: rgb(${data[0]}, ${data[1]}, ${data[2]})`);
+    };
+  }
+
+  async function processBackground(){
+    if (!bgImageFile){ alert('Upload an image first.'); return; }
+    const tol = Math.max(0, Math.min(255, parseInt($('#bg-tol').value) || 32));
+    const mode = $('#bg-mode').value;
+
+    const img = await imageFromFile(bgImageFile);
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth||img.width; c.height = img.naturalHeight||img.height;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    const imgData = ctx.getImageData(0, 0, c.width, c.height);
+    const d = imgData.data;
+
+    // Determine key color (auto: average of corners)
+    let key = bgPickColor;
+    if (mode==='auto' || !key){
+      key = avgCornerColor(ctx, c.width, c.height);
+    }
+
+    for (let i=0;i<d.length;i+=4){
+      const dr = Math.abs(d[i]-key.r);
+      const dg = Math.abs(d[i+1]-key.g);
+      const db = Math.abs(d[i+2]-key.b);
+      if ((dr+dg+db)/3 <= tol){
+        d[i+3] = 0; // transparent
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+    const out = await new Promise(r=>c.toBlob(r, 'image/png', 1));
+    // Show result card
+    const url = blobToObjectURL(out);
+    const card = document.createElement('div'); card.className='thumb';
+    card.innerHTML = `
+      <img src="${url}">
+      <small>Background removed (PNG)</small>
+      <div class="row">
+        <a class="button secondary" style="font-size:12px;padding:8px 10px" href="${url}" download="${stripExt(bgImageFile.name)}-nobg.png">Download</a>
+      </div>
+    `;
+    // ensure result appears next to original
+    if (bgGallery.children.length>1) bgGallery.removeChild(bgGallery.lastChild);
+    bgGallery.appendChild(card);
+  }
+
+  function avgCornerColor(ctx, w, h){
+    // sample 10x10 px around each corner
+    function sample(x0,y0,w0,h0){
+      const data = ctx.getImageData(x0,y0,w0,h0).data; let r=0,g=0,b=0,n=0;
+      for(let i=0;i<data.length;i+=4){ r+=data[i]; g+=data[i+1]; b+=data[i+2]; n++; }
+      return {r:r/n,g:g/n,b:b/n};
+    }
+    const s = 10;
+    const c1 = sample(0,0,s,s);
+    const c2 = sample(w-s,0,s,s);
+    const c3 = sample(0,h-s,s,s);
+    const c4 = sample(w-s,h-s,s,s);
+    return { r: Math.round((c1.r+c2.r+c3.r+c4.r)/4),
+             g: Math.round((c1.g+c2.g+c3.g+c4.g)/4),
+             b: Math.round((c1.b+c2.b+c3.b+c4.b)/4) };
+  }
+</script>
+</body>
+</html>
