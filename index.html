@@ -3,210 +3,241 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Itodo imgopt</title>
+  <title>Image Compressor</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: #f5f5f7;
-      margin: 0;
-      padding: 40px 20px;
-      color: #1d1d1f;
-    }
-    .container {
-      max-width: 800px;
-      margin: auto;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: #fff;
-      padding: 30px;
-      border-radius: 20px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      margin: 0;
+      padding: 0;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
     }
-    h2 {
-      font-size: 28px;
+
+    .container {
+      width: 95%;
+      max-width: 900px;
+      margin-top: 30px;
+      background: #f9f9f9;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      padding: 25px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #e40000; /* Airtel Red */
+      margin-bottom: 20px;
       font-weight: 600;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
       margin-bottom: 20px;
     }
-    .drop-zone {
-      border: 2px dashed #d2d2d7;
-      border-radius: 16px;
-      padding: 40px;
-      text-align: center;
-      color: #86868b;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    .drop-zone.dragover {
-      border-color: #0071e3;
-      background: #f0f8ff;
-      color: #0071e3;
-    }
-    input, button {
-      margin: 12px 0;
-      padding: 12px;
-      font-size: 16px;
-      border: 1px solid #d2d2d7;
-      border-radius: 12px;
-      outline: none;
-      width: 100%;
-      transition: all 0.2s ease;
-    }
-    input:focus {
-      border-color: #0071e3;
-      box-shadow: 0 0 0 3px rgba(0,113,227,0.2);
-    }
+
     label {
-      text-align: left;
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 5px;
       display: block;
-      font-weight: 500;
-      margin-top: 15px;
     }
-    button {
-      background: #0071e3;
+
+    input[type="number"],
+    input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid #ddd;
+      font-size: 14px;
+      outline: none;
+      transition: border 0.2s ease;
+    }
+
+    input[type="number"]:focus,
+    input[type="file"]:focus {
+      border-color: #e40000;
+    }
+
+    .btn {
+      background: #e40000;
       color: white;
       border: none;
-      cursor: pointer;
+      padding: 12px 18px;
+      border-radius: 25px;
+      font-size: 15px;
       font-weight: 500;
+      cursor: pointer;
+      transition: background 0.3s ease;
     }
-    button:hover {
-      background: #005bb5;
+
+    .btn:hover {
+      background: #cc0000;
     }
-    #preview {
-      display: flex;
-      flex-wrap: wrap;
-      margin-top: 30px;
-      justify-content: center;
-      gap: 20px;
+
+    .preview {
+      margin-top: 25px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 15px;
     }
-    .preview-card {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background: #fafafa;
-      border-radius: 16px;
-      padding: 15px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-      width: 180px;
-    }
-    .preview-card img {
-      max-width: 150px;
+
+    .preview img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
       border-radius: 12px;
-      margin-bottom: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
     }
-    .download-btn {
-      background: #34c759;
-      text-decoration: none;
-      padding: 8px 12px;
-      border-radius: 8px;
-      color: #fff;
-      font-size: 14px;
-      transition: 0.2s;
-    }
-    .download-btn:hover {
-      background: #28a745;
-    }
-    #downloadAll {
+
+    .actions {
+      text-align: center;
       margin-top: 20px;
-      background: #ff9500;
-      font-size: 18px;
-      padding: 14px;
-      border-radius: 14px;
-      width: auto;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>📷 Image Compressor & Resizer</h2>
-
-    <!-- Drag & Drop Zone -->
-    <div id="dropZone" class="drop-zone">
-      Drag & Drop images here or <br><strong>Click to Upload</strong>
-      <input type="file" id="fileInput" multiple accept="image/*" hidden>
-    </div>
+    <h1>Image Compressor</h1>
     
-    <label for="quality">Compression Quality (1-100):</label>
-    <input type="number" id="quality" min="1" max="100" value="70">
+    <div class="controls">
+      <div>
+        <label>Upload Images</label>
+        <input type="file" id="fileInput" accept="image/*" multiple>
+      </div>
+      <div>
+        <label>Target Width (px)</label>
+        <input type="number" id="targetWidth" placeholder="e.g. 800">
+      </div>
+      <div>
+        <label>Target Height (px)</label>
+        <input type="number" id="targetHeight" placeholder="e.g. 600">
+      </div>
+      <div>
+        <label>Quality (0-1)</label>
+        <input type="number" step="0.1" id="quality" value="0.8" min="0.1" max="1">
+      </div>
+      <div>
+        <label>Target Size (KB)</label>
+        <input type="number" id="targetSize" placeholder="e.g. 200">
+      </div>
+    </div>
 
-    <label for="targetKB">Target Size (KB, optional):</label>
-    <input type="number" id="targetKB" placeholder="e.g. 200">
+    <div class="actions">
+      <button class="btn" id="compressBtn">Compress Images</button>
+      <button class="btn" id="downloadAllBtn">Download All as ZIP</button>
+    </div>
 
-    <label for="width">Target Width (px, optional):</label>
-    <input type="number" id="width" placeholder="e.g. 800">
-
-    <label for="height">Target Height (px, optional):</label>
-    <input type="number" id="height" placeholder="e.g. 600">
-
-    <br>
-    <button onclick="compressImages()">Compress & Resize</button>
-    <button id="downloadAll" style="display:none;">⬇️ Download All as ZIP</button>
-    <div id="preview"></div>
+    <div class="preview" id="preview"></div>
   </div>
 
-  <!-- JSZip CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
   <script>
-    const dropZone = document.getElementById("dropZone");
-    const fileInput = document.getElementById("fileInput");
-    const preview = document.getElementById("preview");
-    const downloadAllBtn = document.getElementById("downloadAll");
+    const fileInput = document.getElementById('fileInput');
+    const compressBtn = document.getElementById('compressBtn');
+    const downloadAllBtn = document.getElementById('downloadAllBtn');
+    const preview = document.getElementById('preview');
+
+    let uploadedFiles = [];
     let compressedFiles = [];
-    let selectedFiles = [];
 
-    // Handle drop zone clicks
-    dropZone.addEventListener("click", () => fileInput.click());
-
-    // Drag & drop events
-    dropZone.addEventListener("dragover", e => {
-      e.preventDefault();
-      dropZone.classList.add("dragover");
-    });
-    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
-    dropZone.addEventListener("drop", e => {
-      e.preventDefault();
-      dropZone.classList.remove("dragover");
-      selectedFiles = [...e.dataTransfer.files];
-    });
-
-    // File input selection
-    fileInput.addEventListener("change", e => {
-      selectedFiles = [...e.target.files];
-    });
-
-    function compressImages() {
+    // Show previews immediately
+    fileInput.addEventListener('change', (e) => {
       preview.innerHTML = "";
-      compressedFiles = [];
-      downloadAllBtn.style.display = "none";
+      uploadedFiles = Array.from(e.target.files);
+      uploadedFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
 
-      let files = selectedFiles;
-      let quality = document.getElementById("quality").value / 100;
-      const targetWidth = parseInt(document.getElementById("width").value);
-      const targetHeight = parseInt(document.getElementById("height").value);
-      const targetKB = parseInt(document.getElementById("targetKB").value);
+    function compressImage(file, maxWidth, maxHeight, quality, targetSizeKB) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
 
-      if (!files.length) {
-        alert("Please select images first!");
+            if (maxWidth && width > maxWidth) {
+              height = (maxWidth / width) * height;
+              width = maxWidth;
+            }
+            if (maxHeight && height > maxHeight) {
+              width = (maxHeight / height) * width;
+              height = maxHeight;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            let currentQuality = quality;
+            let dataUrl = canvas.toDataURL('image/jpeg', currentQuality);
+
+            if (targetSizeKB) {
+              while (dataUrl.length / 1024 > targetSizeKB && currentQuality > 0.1) {
+                currentQuality -= 0.05;
+                dataUrl = canvas.toDataURL('image/jpeg', currentQuality);
+              }
+            }
+
+            fetch(dataUrl)
+              .then(res => res.blob())
+              .then(blob => {
+                resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+              });
+          };
+        };
+      });
+    }
+
+    compressBtn.addEventListener('click', async () => {
+      const maxWidth = parseInt(document.getElementById('targetWidth').value) || null;
+      const maxHeight = parseInt(document.getElementById('targetHeight').value) || null;
+      const quality = parseFloat(document.getElementById('quality').value) || 0.8;
+      const targetSizeKB = parseInt(document.getElementById('targetSize').value) || null;
+
+      compressedFiles = await Promise.all(
+        uploadedFiles.map(file => compressImage(file, maxWidth, maxHeight, quality, targetSizeKB))
+      );
+
+      alert("Compression completed!");
+    });
+
+    downloadAllBtn.addEventListener('click', async () => {
+      if (compressedFiles.length === 0) {
+        alert("Please compress images first.");
         return;
       }
 
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
+      const zip = new JSZip();
+      compressedFiles.forEach(file => {
+        zip.file(file.name, file);
+      });
 
-        reader.onload = event => {
-          const img = new Image();
-          img.src = event.target.result;
-
-          img.onload = () => {
-            let newWidth = img.width;
-            let newHeight = img.height;
-
-            if (targetWidth && targetHeight) {
-              newWidth = targetWidth;
-              newHeight = targetHeight;
-            } else if (targetWidth && !targetHeight) {
-              newWidth = targetWidth;
-              newHeight = Math.round((img.height / img.width) * newWidth);
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, "compressed_images.zip");
+    });
+  </script>
+</body>
+  </html>              newHeight = Math.round((img.height / img.width) * newWidth);
             } else if (!targetWidth && targetHeight) {
               newHeight = targetHeight;
               newWidth = Math.round((img.width / img.height) * newHeight);
