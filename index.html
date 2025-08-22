@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Itodo imgopt</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f5f5f7;
+      margin: 0;
+      padding: 40px 20px;
+      color: #1d1d1f;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+    h2 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .drop-zone {
+      border: 2px dashed #d2d2d7;
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      color: #86868b;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .drop-zone.dragover {
+      border-color: #0071e3;
+      background: #f0f8ff;
+      color: #0071e3;
+    }
+    input, button {
+      margin: 12px 0;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #d2d2d7;
+      border-radius: 12px;
+      outline: none;
+      width: 100%;
+      transition: all 0.2s ease;
+    }
+    input:focus {
+      border-color: #0071e3;
+      box-shadow: 0 0 0 3px rgba(0,113,227,0.2);
+    }
+    label {
+      text-align: left;
+      display: block;
+      font-weight: 500;
+      margin-top: 15px;
+    }
+    button {
+      background: #0071e3;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    button:hover {
+      background: #005bb5;
+    }
+    #preview {
+      display: flex;
+      flex-wrap: wrap;
+      margin-top: 30px;
+      justify-content: center;
+      gap: 20px;
+    }
+    .preview-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #fafafa;
+      border-radius: 16px;
+      padding: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+      width: 180px;
+    }
+    .preview-card img {
+      max-width: 150px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+    }
+    .download-btn {
+      background: #34c759;
+      text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+    .download-btn:hover {
+      background: #28a745;
+    }
+    #downloadAll {
+      margin-top: 20px;
+      background: #ff9500;
+      font-size: 18px;
+      padding: 14px;
+      border-radius: 14px;
+      width: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📷 Image Compressor & Resizer</h2>
+
+    <!-- Drag & Drop Zone -->
+    <div id="dropZone" class="drop-zone">
+      Drag & Drop images here or <br><strong>Click to Upload</strong>
+      <input type="file" id="fileInput" multiple accept="image/*" hidden>
+    </div>
+    
+    <label for="quality">Compression Quality (1-100):</label>
+    <input type="number" id="quality" min="1" max="100" value="70">
+
+    <label for="targetKB">Target Size (KB, optional):</label>
+    <input type="number" id="targetKB" placeholder="e.g. 200">
+
+    <label for="width">Target Width (px, optional):</label>
+    <input type="number" id="width" placeholder="e.g. 800">
+
+    <label for="height">Target Height (px, optional):</label>
+    <input type="number" id="height" placeholder="e.g. 600">
+
+    <br>
+    <button onclick="compressImages()">Compress & Resize</button>
+    <button id="downloadAll" style="display:none;">⬇️ Download All as ZIP</button>
+    <div id="preview"></div>
+  </div>
+
+  <!-- JSZip CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+  <script>
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("fileInput");
+    const preview = document.getElementById("preview");
+    const downloadAllBtn = document.getElementById("downloadAll");
+    let compressedFiles = [];
+    let selectedFiles = [];
+
+    // Handle drop zone clicks
+    dropZone.addEventListener("click", () => fileInput.click());
+
+    // Drag & drop events
+    dropZone.addEventListener("dragover", e => {
+      e.preventDefault();
+      dropZone.classList.add("dragover");
+    });
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+    dropZone.addEventListener("drop", e => {
+      e.preventDefault();
+      dropZone.classList.remove("dragover");
+      selectedFiles = [...e.dataTransfer.files];
+    });
+
+    // File input selection
+    fileInput.addEventListener("change", e => {
+      selectedFiles = [...e.target.files];
+    });
+
+    function compressImages() {
+      preview.innerHTML = "";
+      compressedFiles = [];
+      downloadAllBtn.style.display = "none";
+
+      let files = selectedFiles;
+      let quality = document.getElementById("quality").value / 100;
+      const targetWidth = parseInt(document.getElementById("width").value);
+      const targetHeight = parseInt(document.getElementById("height").value);
+      const targetKB = parseInt(document.getElementById("targetKB").value);
+
+      if (!files.length) {
+        alert("Please select images first!");
+        return;
+      }
+
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+
+        reader.onload = event => {
+          const img = new Image();
+          img.src = event.target.result;
+
+          img.onload = () => {
+            let newWidth = img.width;
+            let newHeight = img.height;
+
+            if (targetWidth && targetHeight) {
+              newWidth = targetWidth;
+              newHeight = targetHeight;
+            } else if (targetWidth && !targetHeight) {
+              newWidth = targetWidth;
+              newHeight = Math.round((img.height / img.width) * newWidth);
+            } else if (!targetWidth && targetHeight) {
+              newHeight = targetHeight;
+              newWidth = Math.round((img.width / img.height) * newHeight);
+            }
+
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+            let compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
+
+            // Adjust if target KB is set
+            if (targetKB) {
+              let currentSize = Math.round((compressedDataUrl.length * 3) / 4 / 1024);
+              let tempQuality = quality;
+              while (currentSize > targetKB && tempQuality > 0.1) {
+                tempQuality -= 0.05;
+                compressedDataUrl = canvas.toDataURL("image/jpeg", tempQuality);
+                currentSize = Math.round((compressedDataUrl.length * 3) / 4 / 1024);
+              }
+            }
+
+            // Create preview card
+            const card = document.createElement("div");
+            card.className = "preview-card";
+
+            const compressedImg = document.createElement("img");
+            compressedImg.src = compressedDataUrl;
+            card.appendChild(compressedImg);
+
+            const downloadBtn = document.createElement("a");
+            downloadBtn.innerText = "Download";
+            downloadBtn.href = compressedDataUrl;
+            downloadBtn.download = "compressed_" + file.name;
+            downloadBtn.className = "download-btn";
+            card.appendChild(downloadBtn);
+
+            preview.appendChild(card);
+
+            // Save for ZIP
+            compressedFiles.push({
+              name: "compressed_" + file.name,
+              dataUrl: compressedDataUrl
+            });
+
+            if (compressedFiles.length === files.length) {
+              downloadAllBtn.style.display = "inline-block";
+            }
+          };
+        };
+      });
+    }
+
+    // Download all as ZIP
+    downloadAllBtn.addEventListener("click", () => {
+      const zip = new JSZip();
+      compressedFiles.forEach(file => {
+        const base64Data = file.dataUrl.split(",")[1];
+        zip.file(file.name, base64Data, { base64: true });
+      });
+      zip.generateAsync({ type: "blob" }).then(content => {
+        saveAs(content, "compressed_images.zip");
+      });
+    });
+  </script>
+</body>
+</html>
