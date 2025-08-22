@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Compressor</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #fff;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    header {
+      text-align: center;
+      padding: 20px;
+      background: #e60000; /* Airtel Red */
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 600;
+      width: 100%;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 20px;
+      text-align: center;
+    }
+    input, button {
+      margin: 8px;
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #e60000;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: 0.2s ease-in-out;
+    }
+    button:hover {
+      background: #cc0000;
+    }
+    .images {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .images img {
+      width: 100%;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+    }
+    .images img:hover {
+      transform: scale(1.05);
+    }
+    .progress-container {
+      width: 100%;
+      background: #f0f0f0;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 15px;
+      display: none;
+    }
+    .progress-bar {
+      height: 12px;
+      background: #e60000;
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .progress-text {
+      margin-top: 5px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <header>📸 Image Compressor</header>
+  <div class="container">
+    <input type="file" id="upload" multiple accept="image/*"><br>
+    <input type="number" id="width" placeholder="Target Width (px)">
+    <input type="number" id="height" placeholder="Target Height (px)">
+    <input type="number" id="quality" placeholder="Quality (1-100)">
+    <input type="number" id="targetSize" placeholder="Target Size (KB)">
+    <br>
+    <button onclick="compressImages()">Compress Images</button>
+    <button onclick="downloadAll()">Download All as ZIP</button>
+    
+    <div class="progress-container" id="progressContainer">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="progress-text" id="progressText"></div>
+    
+    <div class="images" id="preview"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+  <script>
+    let uploadedFiles = [];
+    let compressedFiles = [];
+
+    document.getElementById('upload').addEventListener('change', (e) => {
+      uploadedFiles = Array.from(e.target.files);
+      showPreview();
+    });
+
+    function showPreview() {
+      const preview = document.getElementById('preview');
+      preview.innerHTML = "";
+      uploadedFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = document.createElement("img");
+          img.src = e.target.result;
+          preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function compressImages() {
+      if (!uploadedFiles.length) return alert("Please upload images first.");
+      
+      const width = parseInt(document.getElementById('width').value) || null;
+      const height = parseInt(document.getElementById('height').value) || null;
+      let quality = (parseInt(document.getElementById('quality').value) || 80) / 100;
+      const targetSizeKB = parseInt(document.getElementById('targetSize').value) || null;
+
+      compressedFiles = [];
+      const progressContainer = document.getElementById("progressContainer");
+      const progressBar = document.getElementById("progressBar");
+      const progressText = document.getElementById("progressText");
+      progressContainer.style.display = "block";
+
+      for (let i = 0; i < uploadedFiles.length; i++) {
+        const file = uploadedFiles[i];
+        const img = await createImageBitmap(file);
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        let newWidth = width || img.width;
+        let newHeight = height || img.height;
+        if (width && !height) newHeight = (img.height / img.width) * width;
+        if (!width && height) newWidth = (img.width / img.height) * height;
+
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+        let blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", quality));
+
+        if (targetSizeKB) {
+          while (blob.size / 1024 > targetSizeKB && quality > 0.1) {
+            quality -= 0.05;
+            blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", quality));
+          }
+        }
+
+        compressedFiles.push({ name: file.name, blob });
+
+        let percent = Math.round(((i + 1) / uploadedFiles.length) * 100);
+        progressBar.style.width = percent + "%";
+        progressText.textContent = `Compressing... ${percent}%`;
+      }
+
+      progressText.textContent = "✅ Compression Complete!";
+    }
+
+    async function downloadAll() {
+      if (!compressedFiles.length) return alert("Compress images first.");
+      const zip = new JSZip();
+      compressedFiles.forEach(f => zip.file(f.name, f.blob));
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, "compressed_images.zip");
+    }
+  </script>
+</body>
+</html>
