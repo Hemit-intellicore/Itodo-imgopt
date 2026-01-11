@@ -1,262 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Image Compressor</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Product - PayPal Test Page</title>
+  
+  <!-- Modern & clean Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Your PayPal SDK (Part 1 - only once per page) -->
+  <script 
+    src="https://www.paypal.com/sdk/js?client-id=BAAMhxd3K71TUmZjQch9AFKdDi1Tq_b-g0E7RjtrIqNBHA5yfepUheb1RzMC712GwH-E5eKO6fVrZOTP-4&components=hosted-buttons&disable-funding=venmo&currency=USD">
+  </script>
+  
   <style>
-    /* Apple-like clean design + Airtel Red accent */
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    * {
       margin: 0;
-      background: #fafafa;
-      color: #333;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    header {
-      background: #e60000; /* Airtel Red */
-      color: white;
-      width: 100%;
-      padding: 1rem;
-      font-size: 1.5rem;
-      font-weight: 600;
-      text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
-
-    .container {
-      width: 95%;
-      max-width: 900px;
-      margin-top: 20px;
-    }
-
-    .controls {
-      background: white;
-      padding: 20px;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-      margin-bottom: 20px;
-      display: grid;
-      gap: 1rem;
-    }
-
-    input, button {
-      padding: 10px;
-      border-radius: 12px;
-      border: 1px solid #ddd;
-      font-size: 1rem;
-      width: 100%;
+      padding: 0;
       box-sizing: border-box;
     }
-
-    button {
-      background: #e60000;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: 500;
-      transition: background 0.3s ease;
+    
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: #f8f9fc;
+      color: #1f2937;
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 2rem 1rem;
     }
-    button:hover {
-      background: #cc0000;
-    }
-
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 16px;
-      margin-bottom: 30px;
-    }
-
-    .image-card {
+    
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
       background: white;
-      padding: 10px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .image-card img {
-      max-width: 100%;
-      border-radius: 10px;
-    }
-
-    .progress {
-      width: 100%;
-      background: #eee;
-      border-radius: 12px;
+      border-radius: 16px;
       overflow: hidden;
-      margin-top: 10px;
-      height: 10px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
     }
-    .progress-bar {
-      height: 100%;
-      width: 0;
-      background: #e60000;
-      transition: width 0.3s ease;
-    }
-
-    .download-btn {
-      background: #f5f5f5;
-      color: #e60000;
-      border: 1px solid #e60000;
-      font-size: 0.9rem;
-      padding: 6px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    .download-btn:hover {
-      background: #e60000;
+    
+    .product-hero {
+      height: 320px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       color: white;
+      text-align: center;
+      padding: 2rem;
+    }
+    
+    .product-content {
+      padding: 2.5rem;
+    }
+    
+    h1 {
+      font-size: 2.1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    
+    .price {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #10b981;
+      margin: 1.2rem 0;
+    }
+    
+    .description {
+      color: #4b5563;
+      margin-bottom: 2rem;
+      font-size: 1.05rem;
+    }
+    
+    .features {
+      list-style: none;
+      margin: 1.8rem 0;
+    }
+    
+    .features li {
+      margin-bottom: 0.9rem;
+      padding-left: 1.8rem;
+      position: relative;
+    }
+    
+    .features li::before {
+      content: "✓";
+      color: #10b981;
+      position: absolute;
+      left: 0;
+      font-weight: bold;
+    }
+    
+    /* PayPal button container styling */
+    #paypal-container-43ZQTMYAJFHWE {
+      max-width: 380px;
+      margin: 2rem auto 1rem;
+      transform: scale(1.05);
+    }
+    
+    .footer-note {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin-top: 3rem;
+      padding-bottom: 2rem;
     }
   </style>
 </head>
 <body>
-  <header>📸 Smart Image Compressor</header>
 
   <div class="container">
-    <!-- Uploaded Images Preview on Top -->
-    <div class="gallery" id="gallery"></div>
+    <!-- Visual header area (you can replace with real product image later) -->
+    <div class="product-hero">
+      <h1 style="font-size: 3rem; font-weight: 800;">Premium Product</h1>
+    </div>
 
-    <!-- Controls -->
-    <div class="controls">
-      <input type="file" id="fileInput" multiple accept="image/*">
-      <input type="number" id="targetWidth" placeholder="Target Width (px)">
-      <input type="number" id="targetHeight" placeholder="Target Height (px)">
-      <input type="number" id="targetKB" placeholder="Target Size (KB)">
-      <input type="range" id="quality" min="10" max="100" value="80">
-      <label for="quality">Quality: <span id="qualityValue">80</span>%</label>
-      <button onclick="compressImages()">Compress Images</button>
-      <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
-      <button onclick="downloadAll()">Download All as ZIP</button>
+    <div class="product-content">
+      <h1>Digital Premium Package</h1>
+      
+      <div class="price">$49.00</div>
+      
+      <div class="description">
+        Get instant access to our exclusive digital bundle — lifetime updates, premium support, 
+        and everything you need to take your project to the next level.
+      </div>
+      
+      <ul class="features">
+        <li>Full lifetime access</li>
+        <li>Regular free updates</li>
+        <li>Priority email support</li>
+        <li>Secure & instant delivery</li>
+        <li>Money-back guarantee</li>
+      </ul>
+
+      <!-- Your PayPal Hosted Button (Part 2) -->
+      <div id="paypal-container-43ZQTMYAJFHWE"></div>
+      
+      <script>
+        paypal.HostedButtons({
+          hostedButtonId: "43ZQTMYAJFHWE",
+        }).render("#paypal-container-43ZQTMYAJFHWE")
+      </script>
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-  <script>
-    const fileInput = document.getElementById('fileInput');
-    const gallery = document.getElementById('gallery');
-    const qualityInput = document.getElementById('quality');
-    const qualityValue = document.getElementById('qualityValue');
-    const progressBar = document.getElementById('progressBar');
-    let files = [], compressedResults = [];
+  <div class="footer-note">
+    This is a test page • No real charges will occur in sandbox mode
+  </div>
 
-    qualityInput.addEventListener("input", () => {
-      qualityValue.textContent = qualityInput.value;
-    });
-
-    fileInput.addEventListener("change", () => {
-      files = [...fileInput.files];
-      gallery.innerHTML = '';
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = e => {
-          const div = document.createElement('div');
-          div.className = 'image-card';
-          div.innerHTML = `<img src="${e.target.result}" alt="">
-                           <small>${file.name}</small>`;
-          gallery.appendChild(div);
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-
-    async function compressImages() {
-      if (files.length === 0) return alert("Please upload images first.");
-      compressedResults = [];
-      progressBar.style.width = "0%";
-      const targetW = parseInt(document.getElementById('targetWidth').value) || null;
-      const targetH = parseInt(document.getElementById('targetHeight').value) || null;
-      const targetKB = parseInt(document.getElementById('targetKB').value) || null;
-      const quality = qualityInput.value / 100;
-
-      for (let i = 0; i < files.length; i++) {
-        let file = files[i];
-        const img = await loadImage(file);
-        const canvas = document.createElement("canvas");
-        let width = targetW || img.width;
-        let height = targetH || img.height;
-        if (targetW && !targetH) height = (img.height / img.width) * targetW;
-        if (targetH && !targetW) width = (img.width / img.height) * targetH;
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-
-        let blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', quality));
-        if (targetKB) {
-          let currentKB = blob.size / 1024;
-          let q = quality;
-          while (currentKB > targetKB && q > 0.1) {
-            q -= 0.05;
-            blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', q));
-            currentKB = blob.size / 1024;
-          }
-        }
-        compressedResults.push({ name: file.name, blob });
-        updateProgress(((i+1)/files.length)*100);
-      }
-      showCompressed();
-    }
-
-    function loadImage(file) {
-      return new Promise(res => {
-        const reader = new FileReader();
-        reader.onload = e => {
-          const img = new Image();
-          img.onload = () => res(img);
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
-    function updateProgress(percent) {
-      progressBar.style.width = percent + "%";
-    }
-
-    function showCompressed() {
-      gallery.innerHTML = '';
-      compressedResults.forEach(({name, blob}) => {
-        const url = URL.createObjectURL(blob);
-        const div = document.createElement('div');
-        div.className = 'image-card';
-        div.innerHTML = `
-          <img src="${url}" alt="">
-          <small>${name} (${Math.round(blob.size/1024)} KB)</small>
-          <button class="download-btn" onclick="downloadImage('${name}', '${url}')">Download</button>
-        `;
-        gallery.appendChild(div);
-      });
-    }
-
-    function downloadImage(name, url) {
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = name;
-      a.click();
-    }
-
-    async function downloadAll() {
-      if (compressedResults.length === 0) return alert("No compressed images.");
-      const zip = new JSZip();
-      compressedResults.forEach(({name, blob}) => {
-        zip.file(name, blob);
-      });
-      const content = await zip.generateAsync({type:"blob"});
-      saveAs(content, "compressed_images.zip");
-    }
-  </script>
 </body>
 </html>
